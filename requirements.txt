@@ -1,5 +1,6 @@
 asgiref==3.11.1
 Django==5.2.13
+django-cors-headers==4.9.0
 djangorestframework==3.17.1
 dotenv==0.9.9
 python-dotenv==1.2.2
