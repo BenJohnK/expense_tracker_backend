@@ -5,6 +5,7 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.db.models import Sum
 
 from .models import Expense
 from .serializers import ExpenseSerializer
@@ -14,26 +15,22 @@ class ExpenseView(APIView):
     def get(self, request):
         queryset = Expense.objects.all()
 
-        # Filter by category
         category = request.query_params.get("category")
         if category:
             queryset = queryset.filter(category=category)
 
-        # Sort by date desc
         sort = request.query_params.get("sort")
         if sort == "date_desc":
             queryset = queryset.order_by("-date")
 
         serializer = ExpenseSerializer(queryset, many=True)
 
-        # Calculate total
-        total = sum(item["amount"] for item in serializer.data)
+        total = queryset.aggregate(total=Sum("amount"))["total"] or 0
 
         return Response({
             "data": serializer.data,
             "total": total
         })
-
 
     def post(self, request):
         serializer = ExpenseSerializer(
