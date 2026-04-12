@@ -1,5 +1,10 @@
 # Expense Tracker Backend (Django + DRF)
 
+## 🚀 Live Demo
+
+Frontend: https://expense-frontend-blond.vercel.app/
+Backend: https://expense-tracker-backend-2x1m.onrender.com/api/expenses/
+
 ## Overview
 
 This is a simple expense tracking backend built using Django and Django REST Framework.
