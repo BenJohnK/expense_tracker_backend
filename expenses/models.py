@@ -6,10 +6,10 @@ from decimal import Decimal
 
 class Expense(models.Model):
     CATEGORY_CHOICES = [
-        ("FOOD", "Food"),
-        ("TRAVEL", "Travel"),
-        ("SHOPPING", "Shopping"),
-        ("OTHER", "Other"),
+        ("Food", "Food"),
+        ("Travel", "Travel"),
+        ("Shopping", "Shopping"),
+        ("Other", "Other"),
     ]
 
     amount = models.DecimalField(max_digits=10, decimal_places=2)
