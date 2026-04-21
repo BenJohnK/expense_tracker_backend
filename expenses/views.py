@@ -10,6 +10,15 @@ from collections import defaultdict
 
 from .models import Expense
 from .serializers import ExpenseSerializer
+from dotenv import load_dotenv
+import json
+import os
+from openai import OpenAI
+
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 class ExpenseView(APIView):
 
@@ -74,31 +83,60 @@ class ExpenseInsightsView(APIView):
             for cat, amt in category_totals.items()
         }
 
-        # --- MOCK AI LOGIC (for now) ---
+        # 🧠 Prepare structured input for AI
+        ai_input = {
+            "total_spend": float(total),
+            "category_breakdown": category_percentages
+        }
 
-        # Top category
-        top_category = max(category_totals, key=category_totals.get)
+        # 🧠 Prompt (VERY IMPORTANT)
+        prompt = f"""
+            You are a financial assistant.
 
-        summary = f"You spent most on {top_category}."
+            The currency is Indian Rupees (₹).
 
-        insights = []
+            Given the user's expense summary:
+            {ai_input}
 
-        for cat, percent in category_percentages.items():
-            insights.append(f"{cat} accounts for {percent:.1f}% of your spending.")
+            Generate:
+            1. A short summary (1 sentence and avoid the word 'user' in it and instead use 'You')
+            2. 2-3 key insights
+            3. 2 actionable recommendations
 
-        recommendations = []
+            Respond strictly in JSON format:
+            {{
+            "summary": "...",
+            "insights": ["...", "..."],
+            "recommendations": ["...", "..."]
+            }}
+        """
 
-        if category_percentages.get("FOOD", 0) > 40:
-            recommendations.append("Consider reducing eating out expenses.")
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+            )
 
-        if category_percentages.get("TRAVEL", 0) > 30:
-            recommendations.append("Plan trips in advance to save costs.")
+            content = response.choices[0].message.content
+            try:
+                parsed = json.loads(content)
+            except Exception:
+                parsed = {
+                    "summary": content,
+                    "insights": [],
+                    "recommendations": []
+                }
 
-        if not recommendations:
-            recommendations.append("Your spending looks balanced. Keep it up!")
+            return Response(parsed)
 
-        return Response({
-            "summary": summary,
-            "insights": insights,
-            "recommendations": recommendations
-        })
+        except Exception as e:
+            # Fallback (VERY IMPORTANT)
+            return Response({
+                "summary": "Unable to generate AI insights right now.",
+                "insights": [],
+                "recommendations": [],
+                "error": str(e)
+            }, status=500)
